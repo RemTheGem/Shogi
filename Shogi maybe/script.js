@@ -1,0 +1,223 @@
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const boardSize = Math.min(canvas.width, canvas.height) * 0.9;
+const cellSize = boardSize / 9;
+const offsetX = (canvas.width - boardSize) / 2;
+const offsetY = (canvas.height - boardSize) / 2;
+
+const pieces = {
+    'P': { image: 'pawn.png' },
+    'L': { image: 'lance.png'},
+    'N': { image: 'knight.png' },
+    'S': { image: 'silver.png'},
+    'G': { image: 'gold.png' },
+    'B': { image: 'bishop.png' },
+    'R': { image: 'rook.png' },
+    'K': { image: 'king.png' },
+    'P2': { image: 'pawn2.png' },
+    'L2': { image: 'lance2.png' },
+    'N2': { image: 'knight2.png' },
+    'S2': { image: 'silver2.png' },
+    'G2': { image: 'gold2.png' },
+    'B2': { image: 'bishop2.png' },
+    'R2': { image: 'rook2.png' },
+    'K2': { image: 'king2.png' }
+};
+
+const pieceImages = {};
+for (const key in pieces) {
+    pieceImages[key] = new Image();
+    pieceImages[key].src = pieces[key].image;
+}
+function drawBoard() {
+    ctx.fillStyle = '#f4e2b8'; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const boardSize = Math.min(canvas.width, canvas.height) * 0.9; 
+    const cellSize = boardSize / 9;
+    const offsetX = (canvas.width - boardSize) / 2;
+    const offsetY = (canvas.height - boardSize) / 2;
+
+    ctx.fillStyle = '#f4e2b8';
+    ctx.fillRect(offsetX, offsetY, boardSize, boardSize);
+
+    ctx.strokeStyle = '#000';
+
+    for (let i = 0; i <= 9; i++) {
+        ctx.beginPath();
+        ctx.moveTo(offsetX + i * cellSize, offsetY);
+        ctx.lineTo(offsetX + i * cellSize, offsetY + boardSize);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(offsetX, offsetY + i * cellSize);
+        ctx.lineTo(offsetX + boardSize, offsetY + i * cellSize);
+        ctx.stroke();
+    }
+}
+function highlightCell(row, col, boardSize, offsetX, offsetY) {
+    const cellSize = boardSize / 9;
+
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; 
+    ctx.fillRect(
+        offsetX + col * cellSize,
+        offsetY + row * cellSize,
+        cellSize,
+        cellSize
+    );
+}
+
+
+function spawnInitialPieces() {
+    
+    for (let col = 0; col < 9; col++) {
+        pieces[`P${col}`] = { image: 'pawn.png', x: col, y: 6 };
+    }
+
+    
+    pieces['K'] = { image: 'king.png', x: 4, y: 8 };
+
+    
+    pieces['R'] = { image: 'rook.png', x: 7, y: 7 };
+    pieces['B'] = { image: 'bishop.png', x: 1, y: 7 };
+    pieces['G'] = { image: 'gold.png', x: 3, y: 8 };
+    pieces['S'] = { image: 'silver.png', x: 2, y: 8 };
+    pieces['N'] = { image: 'knight.png', x: 1, y: 8 };
+    pieces['L'] = { image: 'lance.png', x: 0, y: 8 };
+    pieces['GB'] = { image: 'gold.png', x: 5, y: 8 };
+    pieces['SB'] = { image: 'silver.png', x: 6, y: 8 };
+    pieces['NB'] = { image: 'knight.png', x: 7, y: 8 };
+    pieces['LB'] = { image: 'lance.png', x: 8, y: 8 };
+   
+    for (let col = 0; col < 9; col++) {
+        pieces[`P2${col}`] = { image: 'pawn2.png', x: col, y: 2 };
+    }
+
+
+    pieces['K2'] = { image: 'king2.png', x: 4, y: 0 };
+
+
+    pieces['R2'] = { image: 'rook2.png', x: 7, y: 1 };
+    pieces['B2'] = { image: 'bishop2.png', x: 1, y: 1 };
+    pieces['G2'] = { image: 'gold2.png', x: 3, y: 0 };
+    pieces['S2'] = { image: 'silver2.png', x: 2, y: 0 };
+    pieces['N2'] = { image: 'knight2.png', x: 1, y: 0 };
+    pieces['L2'] = { image: 'lance2.png', x: 0, y: 0 };
+    pieces['GB2'] = { image: 'gold2.png', x: 5, y: 0 };
+    pieces['SB2'] = { image: 'silver2.png', x: 6, y: 0 };
+    pieces['NB2'] = { image: 'knight2.png', x: 7, y: 0 };
+    pieces['LB2'] = { image: 'lance2.png', x: 8, y: 0 };
+
+    
+    
+    
+}
+function drawPieces() {
+    const cellSize = boardSize / 9;
+    for (const key in pieces) {
+        const piece = pieces[key];
+        const img = pieceImages[key[0]] || pieceImages[key]; 
+                if (img && img.complete) {
+            ctx.drawImage(
+                img,
+                offsetX + piece.x * cellSize,
+                offsetY + piece.y * cellSize,
+                cellSize,
+                cellSize
+            );
+        }
+    }
+}
+
+function loadAllImages(callback) {
+    let loadedCount = 0;
+    const totalImages = Object.keys(pieceImages).length;
+
+    for (const key in pieceImages) {
+        pieceImages[key].onload = () => {
+            loadedCount++;
+            if (loadedCount === totalImages) {
+                callback();
+            }
+        };
+        pieceImages[key].onerror = () => {
+            console.error(`Failed to load image: ${pieceImages[key].src}`);
+        };
+    }
+}
+
+function updateGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBoard();
+    drawPieces();
+}
+function movePiece(key, newX, newY) {
+    if (pieces[key]) {
+        pieces[key].x = newX;
+        pieces[key].y = newY;
+        updateGame();
+    }
+}
+let selectedPieceKey = null;
+
+canvas.addEventListener('click', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const col = Math.floor((x - offsetX) / cellSize);
+    const row = Math.floor((y - offsetY) / cellSize);
+    if (col < 0 || col >= 9 || row < 0 || row >= 9) return;
+    if (selectedPieceKey === null) {
+        for (const key in pieces) {
+            const p = pieces[key];
+            if (p.x === col && p.y === row) {
+                selectedPieceKey = key;
+                highlightCell(row, col, boardSize, offsetX, offsetY);
+                console.log(`Selected piece: ${key} at (${col}, ${row})`);
+                break;
+            }}
+    } else {
+        const piece = pieces[selectedPieceKey];
+        if (!isLegalPawnMove(selectedPieceKey, piece.x, piece.y, col, row)) {
+            console.log(`Illegal move for ${selectedPieceKey} to (${col}, ${row})`);
+            return;
+        }
+        piece.x = col;
+        piece.y = row;
+        selectedPieceKey = null;
+        updateGame();
+        console.log(`Moved piece to (${col}, ${row})`);
+    }
+});
+function isLegalPawnMove(pieceKey, fromX, fromY, toX, toY) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    if (pieceKey.startsWith('P') && !pieceKey.startsWith('P2')) {
+        if (dx === 0 && dy === -1) {
+            return true;
+        }
+    }
+    if (pieceKey.startsWith('P2')) {
+        if (dx === 0 && dy === 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function isOccupied(x, y) {
+    for (const key in pieces) {
+        const p = pieces[key];
+        if (p.x === x && p.y === y) return true;
+    }
+    return false;
+}
+
+loadAllImages(() => {
+    spawnInitialPieces();
+    updateGame();
+});
+
+
+
+
