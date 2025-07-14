@@ -90,7 +90,7 @@ function spawnInitialPieces() {
     pieces['LB'] = { image: 'lance.png', x: 8, y: 8 };
    
     for (let col = 0; col < 9; col++) {
-        pieces[`P2${col}`] = { image: 'pawn2.png', x: col, y: 2 };
+        pieces[`PB${col}`] = { image: 'pawn2.png', x: col, y: 2 };
     }
 
 
@@ -184,8 +184,26 @@ canvas.addEventListener('click', (event) => {
             console.log(`Deselected piece: ${selectedPieceKey}`);
             return;
         }
-        if (!isLegalPawnMove(selectedPieceKey, piece.x, piece.y, col, row)) {
-            console.log(`Illegal move for ${selectedPieceKey} to (${col}, ${row})`);
+        let isValidMove = false;
+        if (selectedPieceKey.startsWith('P') || selectedPieceKey.startsWith('PB')) {
+            isValidMove = isLegalPawnMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('L') || selectedPieceKey.startsWith('L2')) {
+            isValidMove = isLegalLanceMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('N') || selectedPieceKey.startsWith('N2')) {
+            isValidMove = isLegalKnightMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('S') || selectedPieceKey.startsWith('S2')) {
+            isValidMove = isLegalSilverMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('G') || selectedPieceKey.startsWith('G2')) {
+            isValidMove = isLegalGoldMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('K') || selectedPieceKey.startsWith('K2')) {
+            isValidMove = isLegalKingMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('B') || selectedPieceKey.startsWith('B2')) {
+            isValidMove = isLegalBishopMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('R') || selectedPieceKey.startsWith('R2')) {
+            isValidMove = isLegalRookMove(selectedPieceKey, piece.x, piece.y, col, row);
+        }
+        if (!isValidMove) {
+            console.log(`Invalid move for ${selectedPieceKey} to (${col}, ${row})`);
             return;
         }
         piece.x = col;
@@ -198,17 +216,126 @@ canvas.addEventListener('click', (event) => {
 function isLegalPawnMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = toX - fromX;
     const dy = toY - fromY;
-    if (pieceKey.startsWith('P') && !pieceKey.startsWith('P2')) {
+    if (pieceKey.startsWith('P') && !pieceKey.startsWith('PB')) {
         if (dx === 0 && dy === -1) {
+            if (isOccupied(toX, toY)) {
+                console.log(`Cannot move to occupied square (${toX}, ${toY})`);
+                return false;
+            }
             return true;
         }
     }
-    if (pieceKey.startsWith('P2')) {
+    if (pieceKey.startsWith('PB')) {
         if (dx === 0 && dy === 1) {
+            if( isOccupied(toX, toY)) {
+                console.log(`Cannot move to occupied square (${toX}, ${toY})`);
+                return false;}
             return true;
         }
     }
     return false;
+}
+function isLegalLanceMove(pieceKey, fromX, fromY, toX, toY) {
+    if (fromX !== toX) return false; 
+    const direction = pieceKey.startsWith('L2') ? 1 : -1;
+    const dy = toY - fromY;
+    if (direction * dy <= 0) return false;    
+const stepY = direction;
+    for (let y = fromY + stepY; y !== toY; y += stepY) {
+        if (isOccupied(fromX, y)) {
+            console.log(`Blocked at (${fromX}, ${y})`);
+            return false;
+        }
+}
+    return true;
+}
+function isLegalKnightMove(pieceKey, fromX, fromY, toX, toY) {
+    const dx = Math.abs(toX - fromX);
+    const dy = Math.abs(toY - fromY);
+    if (dx === 1 && dy === 2 || dx === 2 && dy === 1) {
+        if (isOccupied(toX, toY)) {
+            console.log(`Cannot move to occupied square (${toX}, ${toY})`);
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+function isLegalSilverMove(pieceKey, fromX, fromY, toX, toY){
+    const dx = Math.abs(toX- fromX);
+    const dy = Math.abs(toY - fromY);
+    if ((dx === 1 && dy === 1) || (dx === 0 && dy === 1) || (dx === 1 && dy === -1)) {
+        if (isOccupied(toX, toY)) {
+            console.log(`Cannot move to occupied square (${toX}, ${toY})`);
+            return false;
+        }
+        return true;
+    }
+}
+function isLegalGoldMove(pieceKey, fromX, fromY, toX, toY) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const direction = pieceKey.endsWith('2') ? 1 : -1;
+    if (dx === 0 && dy === 0) return false;
+    if (dy === -direction && Math.abs(dx) === 1) return false;
+    if (
+        (dx === 0 && Math.abs(dy) === 1) ||       
+        (Math.abs(dx) === 1 && dy === 0) ||       
+        (Math.abs(dx) === 1 && dy === direction)  
+    ) {
+        if (isOccupied(toX, toY)) {
+            console.log(`Cannot move to occupied square (${toX}, ${toY})`);
+            return false;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+function isLegalKingMove(pieceKey, fromX, fromY, toX, toY) {
+    const dx = Math.abs(toX - fromX);
+    const dy = Math.abs(toY - fromY);
+    if ((dx === 1 && dy === 1) || (dx === 0 && dy === 1) || (dx === 1 && dy === 0) || (dx === 0 && dy === -1)) {
+        if (isOccupied(toX, toY)) {
+            console.log(`Cannot move to occupied square (${toX}, ${toY})`);
+            return false;
+        }
+        return true;
+    }
+
+}
+function isLegalBishopMove(pieceKey, fromX, fromY, toX, toY){
+    const dx = Math.abs(toX - fromX);
+    const dy = Math.abs(toY - fromY);
+    if (dx !== dy) return false;
+    const stepX = (toX - fromX) / dx;
+    const stepY = (toY - fromY) / dy;
+    for (let i = 1; i < dx; i++) {
+        const x = fromX + i * stepX;
+        const y = fromY + i * stepY;
+        if (isOccupied(x, y)) {
+            console.log(`Blocked at (${x}, ${y})`);
+            return false;
+        }
+    }
+    return true;
+}
+function isLegalRookMove(pieceKey, fromX, fromY, toX, toY){
+    const dx = Math.abs(toX - fromX);
+    const dy = Math.abs(toY - fromY);
+    if (dx !== 0 && dy !== 0) return false;
+    const stepX = dx === 0 ? 0 : (toX - fromX) / dx;
+    const stepY = dy === 0 ? 0 : (toY - fromY) / dy;
+    for (let i = 1; i < Math.max(dx, dy); i++) {
+        const x = fromX + i * stepX;
+        const y = fromY + i * stepY;
+        if (isOccupied(x, y)) {
+            console.log(`Blocked at (${x}, ${y})`);
+            return false;
+        }
+    }
+    return true;
 }
 
 function isOccupied(x, y) {
