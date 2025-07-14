@@ -178,6 +178,12 @@ canvas.addEventListener('click', (event) => {
             }}
     } else {
         const piece = pieces[selectedPieceKey];
+        if (piece.x === col && piece.y === row) { 
+            selectedPieceKey = null; 
+            updateGame();
+            console.log(`Deselected piece: ${selectedPieceKey}`);
+            return;
+        }
         if (!isLegalPawnMove(selectedPieceKey, piece.x, piece.y, col, row)) {
             console.log(`Illegal move for ${selectedPieceKey} to (${col}, ${row})`);
             return;
