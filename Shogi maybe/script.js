@@ -12,19 +12,19 @@ const pieces = {
     'P': { image: 'pawn.png' },
     'L': { image: 'lance.png'},
     'N': { image: 'knight.png' },
-    'S': { image: 'silver.png'},
+    'Q': { image: 'silver.png'},
     'G': { image: 'gold.png' },
     'B': { image: 'bishop.png' },
     'R': { image: 'rook.png' },
     'K': { image: 'king.png' },
-    'P2': { image: 'pawn2.png' },
-    'L2': { image: 'lance2.png' },
-    'N2': { image: 'knight2.png' },
-    'S2': { image: 'silver2.png' },
-    'G2': { image: 'gold2.png' },
-    'B2': { image: 'bishop2.png' },
-    'R2': { image: 'rook2.png' },
-    'K2': { image: 'king2.png' }
+    'PS': { image: 'pawn2.png' },
+    'LS': { image: 'lance2.png' },
+    'NS': { image: 'knight2.png' },
+    'SS': { image: 'silver2.png' },
+    'GS': { image: 'gold2.png' },
+    'BS': { image: 'bishop2.png' },
+    'RS': { image: 'rook2.png' },
+    'KS': { image: 'king2.png' }
 };
 
 const pieceImages = {};
@@ -84,11 +84,11 @@ function spawnInitialPieces() {
     pieces['R'] = { image: 'rook.png', x: 7, y: 7 };
     pieces['B'] = { image: 'bishop.png', x: 1, y: 7 };
     pieces['G'] = { image: 'gold.png', x: 3, y: 8 };
-    pieces['S'] = { image: 'silver.png', x: 2, y: 8 };
+    pieces['Q'] = { image: 'silver.png', x: 2, y: 8 };
     pieces['N'] = { image: 'knight.png', x: 1, y: 8 };
     pieces['L'] = { image: 'lance.png', x: 0, y: 8 };
     pieces['GB'] = { image: 'gold.png', x: 5, y: 8 };
-    pieces['SB'] = { image: 'silver.png', x: 6, y: 8 };
+    pieces['QB'] = { image: 'silver.png', x: 6, y: 8 };
     pieces['NB'] = { image: 'knight.png', x: 7, y: 8 };
     pieces['LB'] = { image: 'lance.png', x: 8, y: 8 };
    
@@ -103,7 +103,7 @@ function spawnInitialPieces() {
     pieces['RS'] = { image: 'rook2.png', x: 7, y: 1 };
     pieces['BS'] = { image: 'bishop2.png', x: 1, y: 1 };
     pieces['GS'] = { image: 'gold2.png', x: 3, y: 0 };
-    pieces['SS'] = { image: 'silver2.png', x: 2, y: 0 };
+    pieces['QS'] = { image: 'silver2.png', x: 2, y: 0 };
     pieces['NS'] = { image: 'knight2.png', x: 1, y: 0 };
     pieces['LS'] = { image: 'lance2.png', x: 0, y: 0 };
     pieces['GBS'] = { image: 'gold2.png', x: 5, y: 0 };
@@ -119,7 +119,11 @@ function drawPieces() {
     const cellSize = boardSize / 9;
     for (const key in pieces) {
         const piece = pieces[key];
-        const img = pieceImages[key[0]] || pieceImages[key]; 
+        if (key.includes('S')) {
+            img = pieceImages[key[0]+ 'S'];
+        } else {
+            img = pieceImages[key[0]];
+        }
                 if (img && img.complete) {
             ctx.drawImage(
                 img,
@@ -188,7 +192,7 @@ canvas.addEventListener('click', (event) => {
             isValidMove = isLegalLanceMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('N') || selectedPieceKey.startsWith('NS')) {
             isValidMove = isLegalKnightMove(selectedPieceKey, piece.x, piece.y, col, row);
-        } else if (selectedPieceKey.startsWith('S') || selectedPieceKey.startsWith('SS')) {
+        } else if (selectedPieceKey.startsWith('Q') || selectedPieceKey.startsWith('QS')) {
             isValidMove = isLegalSilverMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('G') || selectedPieceKey.startsWith('GS')) {
             isValidMove = isLegalGoldMove(selectedPieceKey, piece.x, piece.y, col, row);
@@ -240,61 +244,104 @@ canvas.addEventListener('click', (event) => {
 function isLegalPawnMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = toX - fromX;
     const dy = toY - fromY;
-    if (pieceKey.startsWith('P') && !pieceKey.startsWith('PS')) {
-        if (dx === 0 && dy === -1) {
-            if (isOccupied(toX, toY)) {
-                console.log(`Cannot move to occupied square (${toX}, ${toY})`);
-                return false;
+    const direction = pieceKey.startsWith('PS') ? 1 : -1;
+    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    if (dx === 0 && dy === direction) {
+        for (const key in pieces) {
+            const p = pieces[key];
+            if (p.x === toX && p.y === toY) {
+                const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+                if (targetOwner === owner) {
+                    console.log(`Can't move — your own piece at (${toX}, ${toY})`); 
+                    return false;
+                } else {
+                    console.log(`Capturing enemy at (${toX}, ${toY})`);
+                    return true;
+                }
             }
-            return true;
         }
-    }
-    if (pieceKey.startsWith('PS')) {
-        if (dx === 0 && dy === 1) {
-            if( isOccupied(toX, toY)) {
-                console.log(`Cannot move to occupied square (${toX}, ${toY})`);
-                return false;}
-            return true;
-        }
+        return true;
     }
     return false;
 }
+
 function isLegalLanceMove(pieceKey, fromX, fromY, toX, toY) {
-    if (fromX !== toX) return false; 
+    if (fromX !== toX) return false;
     const direction = pieceKey.startsWith('LS') ? 1 : -1;
     const dy = toY - fromY;
-    if (direction * dy <= 0) return false;    
-const stepY = direction;
+    if (direction * dy <= 0) return false;
+    const stepY = direction;
     for (let y = fromY + stepY; y !== toY; y += stepY) {
         if (isOccupied(fromX, y)) {
             console.log(`Blocked at (${fromX}, ${y})`);
             return false;
         }
-}
+    }
+    for (const key in pieces) {
+        const p = pieces[key];
+        if (p.x === toX && p.y === toY) {
+            const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+            const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+            if (owner === targetOwner) {
+                console.log(`Can't capture own piece at (${toX}, ${toY})`);
+                return false;
+            } else {
+                console.log(`Capturing enemy at (${toX}, ${toY})`);
+                return true;
+            }
+        }
+    }
     return true;
 }
+
 function isLegalKnightMove(pieceKey, fromX, fromY, toX, toY) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+
+    const direction = pieceKey.endsWith('S') ? 1 : -1;
+
+    if (!((Math.abs(dx) === 1) && (dy === 2 * direction))) {
+        return false;
+    }
+
+    for (const key in pieces) {
+        const p = pieces[key];
+        if (p.x === toX && p.y === toY) {
+            const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+            const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+            if (owner === targetOwner) {
+                console.log(`Can't capture own piece at (${toX}, ${toY})`);
+                return false;
+            } else {
+                console.log(`Capturing enemy at (${toX}, ${toY})`);
+                return true;
+            }
+        }
+    }
+
+    return true;
+}
+function isLegalSilverMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = Math.abs(toX - fromX);
     const dy = Math.abs(toY - fromY);
-    if (dx === 1 && dy === 2 || dx === 2 && dy === 1) {
-        if (isOccupied(toX, toY)) {
-            console.log(`Cannot move to occupied square (${toX}, ${toY})`);
-            return false;
+    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    if ((dx === 1 && dy === 1) || (dx === 0 && dy === 1) || (dx === 1 && dy === -1)) {
+        for (const key in pieces) {
+            const p = pieces[key];
+            if (p.x === toX && p.y === toY) {
+                const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+                if (targetOwner === owner) {
+                    console.log(`Can't move — your own piece at (${toX}, ${toY})`);
+                    return false;
+                } else {
+                    console.log(`Capturing enemy at (${toX}, ${toY})`);
+                    return true;
+                }
+            }
         }
         return true;
     }
     return false;
-}
-function isLegalSilverMove(pieceKey, fromX, fromY, toX, toY){
-    const dx = Math.abs(toX- fromX);
-    const dy = Math.abs(toY - fromY);
-    if ((dx === 1 && dy === 1) || (dx === 0 && dy === 1) || (dx === 1 && dy === -1)) {
-        if (isOccupied(toX, toY)) {
-            console.log(`Cannot move to occupied square (${toX}, ${toY})`);
-            return false;
-        }
-        return true;
-    }
 }
 function isLegalGoldMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = toX - fromX;
