@@ -25,7 +25,19 @@ const pieces = {
     'GS': { image: 'gold2.png' },
     'BS': { image: 'bishop2.png' },
     'RS': { image: 'rook2.png' },
-    'KS': { image: 'king2.png' }
+    'KS': { image: 'king2.png' },
+    'P+': { image: 'pawn_prom.png' },
+    'L+': { image: 'lance_prom.png' },
+    'N+': { image: 'knight_prom.png' },
+    'Q+': { image: 'silver_prom.png' },
+    'B+': { image: 'bishop_prom.png' },
+    'R+': { image: 'rook_prom.png' },
+    'PS+': {image: 'pawn_prom2.png' },
+    'LS+': { image: 'lance_prom2.png' },
+    'NS+': { image: 'knight_prom2.png' },
+    'QS+': { image: 'silver_prom2.png' },
+    'BS+': { image: 'bishop_prom2.png' },
+    'RS+': { image: 'rook_prom2.png' }
 };
 
 const pieceImages = {};
