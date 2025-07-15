@@ -143,6 +143,8 @@ function updateGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBoard();
     drawPieces();
+    checkmate('player1');
+    checkmate('player2');
 }
 
 let selectedPieceKey = null;
@@ -454,10 +456,45 @@ function inCheck(player) {
     }
     return false;
 }
+function checkmate(player) {
+    if (!inCheck(player)) return false;
+
+    for (const key in pieces) {
+        if (ownedBy(key, player)) {
+            const piece = pieces[key];
+            for (let x = 0; x < 9; x++) {
+                for (let y = 0; y < 9; y++) {
+                    if (isLegalMove(key, piece.x, piece.y, x, y)) {
+                        const originalX = piece.x;
+                        const originalY = piece.y;
+                        piece.x = x;
+                        piece.y = y;
+
+                        if (!inCheck(player)) {
+                            piece.x = originalX;
+                            piece.y = originalY;
+                            return false; 
+                        }
+
+                        piece.x = originalX;
+                        piece.y = originalY;
+                    }
+                }
+            }
+        }
+    }
+
+    console.log(`${player} is checkmated!`);
+    return true;
+}
+
 function getOwner(key) {
     return key.endsWith('S') ? 'player2' : 'player1';
 }
-
+// another one cuz why not
+function ownedBy(key, player) {
+    return (player === 'player1' && !key.endsWith('S')) || (player === 'player2' && key.endsWith('S'));
+}
 loadAllImages(() => {
     spawnInitialPieces();
     updateGame();
