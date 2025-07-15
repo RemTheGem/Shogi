@@ -8,6 +8,7 @@ const captured = {
     player1: [],
     player2: []
 };
+let gameOver = false;
 const pieces = {
     'P': { image: 'pawn.png' },
     'L': { image: 'lance.png'},
@@ -150,6 +151,10 @@ function updateGame() {
 let selectedPieceKey = null;
 
 canvas.addEventListener('click', (event) => {
+    if (gameOver) {
+        console.log("Game over! No more moves allowed.");
+        return;
+    }
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -438,15 +443,7 @@ function inCheck(player) {
             continue;
         }
         let isLegal = false;
-
-        if (key.startsWith('P')) isLegal = isLegalPawnMove(key, piece.x, piece.y, king.x, king.y);
-        else if (key.startsWith('L')) isLegal = isLegalLanceMove(key, piece.x, piece.y, king.x, king.y);
-        else if (key.startsWith('N')) isLegal = isLegalKnightMove(key, piece.x, piece.y, king.x, king.y);
-        else if (key.startsWith('S')) isLegal = isLegalSilverMove(key, piece.x, piece.y, king.x, king.y);
-        else if (key.startsWith('G')) isLegal = isLegalGoldMove(key, piece.x, piece.y, king.x, king.y);
-        else if (key.startsWith('K')) isLegal = isLegalKingMove(key, piece.x, piece.y, king.x, king.y);
-        else if (key.startsWith('B')) isLegal = isLegalBishopMove(key, piece.x, piece.y, king.x, king.y);
-        else if (key.startsWith('R')) isLegal = isLegalRookMove(key, piece.x, piece.y, king.x, king.y);
+        isLegal = isLegalMove(key, piece.x, piece.y, king.x, king.y);
 
         if (isLegal) {
             console.log(`${player} King in check by ${key}`);
@@ -485,6 +482,7 @@ function checkmate(player) {
     }
 
     console.log(`${player} is checkmated!`);
+    gameOver = true;
     return true;
 }
 
@@ -495,6 +493,18 @@ function getOwner(key) {
 function ownedBy(key, player) {
     return (player === 'player1' && !key.endsWith('S')) || (player === 'player2' && key.endsWith('S'));
 }
+function isLegalMove(pieceKey, fromX, fromY, toX, toY) {
+    if (pieceKey.startsWith('P')) return isLegalPawnMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('L')) return isLegalLanceMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('N')) return isLegalKnightMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('S')) return isLegalSilverMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('G')) return isLegalGoldMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('K')) return isLegalKingMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('B')) return isLegalBishopMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('R')) return isLegalRookMove(pieceKey, fromX, fromY, toX, toY);
+    return false;
+}
+
 loadAllImages(() => {
     spawnInitialPieces();
     updateGame();
