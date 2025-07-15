@@ -21,7 +21,7 @@ const pieces = {
     'PS': { image: 'pawn2.png' },
     'LS': { image: 'lance2.png' },
     'NS': { image: 'knight2.png' },
-    'SS': { image: 'silver2.png' },
+    'QS': { image: 'silver2.png' },
     'GS': { image: 'gold2.png' },
     'BS': { image: 'bishop2.png' },
     'RS': { image: 'rook2.png' },
@@ -95,10 +95,10 @@ function spawnInitialPieces() {
     pieces['Q'] = { image: 'silver.png', x: 2, y: 8 };
     pieces['N'] = { image: 'knight.png', x: 1, y: 8 };
     pieces['L'] = { image: 'lance.png', x: 0, y: 8 };
-    pieces['GB'] = { image: 'gold.png', x: 5, y: 8 };
-    pieces['QB'] = { image: 'silver.png', x: 6, y: 8 };
-    pieces['NB'] = { image: 'knight.png', x: 7, y: 8 };
-    pieces['LB'] = { image: 'lance.png', x: 8, y: 8 };
+    pieces['GX'] = { image: 'gold.png', x: 5, y: 8 };
+    pieces['QX'] = { image: 'silver.png', x: 6, y: 8 };
+    pieces['NX'] = { image: 'knight.png', x: 7, y: 8 };
+    pieces['LX'] = { image: 'lance.png', x: 8, y: 8 };
     for (let col = 0; col < 9; col++) {
         pieces[`PS${col}S`] = { image: 'pawn2.png', x: col, y: 2 };
     }
@@ -106,23 +106,28 @@ function spawnInitialPieces() {
     pieces['RS'] = { image: 'rook2.png', x: 7, y: 1 };
     pieces['BS'] = { image: 'bishop2.png', x: 1, y: 1 };
     pieces['GS'] = { image: 'gold2.png', x: 3, y: 0 };
-    pieces['SS'] = { image: 'silver2.png', x: 2, y: 0 };
+    pieces['QS'] = { image: 'silver2.png', x: 2, y: 0 };
     pieces['NS'] = { image: 'knight2.png', x: 1, y: 0 };
     pieces['LS'] = { image: 'lance2.png', x: 0, y: 0 };
-    pieces['GBS'] = { image: 'gold2.png', x: 5, y: 0 };
-    pieces['SBS'] = { image: 'silver2.png', x: 6, y: 0 };
-    pieces['NBS'] = { image: 'knight2.png', x: 7, y: 0 };
-    pieces['LBS'] = { image: 'lance2.png', x: 8, y: 0 };
+    pieces['GXS'] = { image: 'gold2.png', x: 5, y: 0 };
+    pieces['QXS'] = { image: 'silver2.png', x: 6, y: 0 };
+    pieces['NXS'] = { image: 'knight2.png', x: 7, y: 0 };
+    pieces['LXS'] = { image: 'lance2.png', x: 8, y: 0 };
 }
 function drawPieces() {
     const cellSize = boardSize / 9;
     for (const key in pieces) {
         const piece = pieces[key];
-        if (key.includes('S')) {
-            img = pieceImages[key[0]+ 'S'];
+        if (key.includes('S+')) {
+            img = pieceImages[key[0] + 'S+'];
+        } else if (key.includes('+')) {
+            img = pieceImages[key[0] + '+'];
+        } else if (key.includes('S')) {
+            img = pieceImages[key[0] + 'S'];
         } else {
             img = pieceImages[key[0]];
         }
+
                 if (img && img.complete) {
             ctx.drawImage(
                 img,
@@ -193,8 +198,10 @@ canvas.addEventListener('click', (event) => {
         let isValidMove = false;
         if (selectedPieceKey.startsWith('P') || selectedPieceKey.startsWith('PS')) {
             isValidMove = isLegalPawnMove(selectedPieceKey, piece.x, piece.y, col, row);
-        } else if (selectedPieceKey.startsWith('L') || selectedPieceKey.startsWith('LS')) {
+        } else if (selectedPieceKey.startsWith('L') || selectedPieceKey.startsWith('LS') ) {
+            if(!selectedPieceKey.endsWith('+')){
             isValidMove = isLegalLanceMove(selectedPieceKey, piece.x, piece.y, col, row);
+        }
         } else if (selectedPieceKey.startsWith('N') || selectedPieceKey.startsWith('NS')) {
             isValidMove = isLegalKnightMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('Q') || selectedPieceKey.startsWith('QS')) {
@@ -207,7 +214,14 @@ canvas.addEventListener('click', (event) => {
             isValidMove = isLegalBishopMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('R') || selectedPieceKey.startsWith('RS')) {
             isValidMove = isLegalRookMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('R+') || selectedPieceKey.startsWith('RS+')) {
+            isValidMove = isLegalRookPromoMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('B+') || selectedPieceKey.startsWith('BS+')) {
+            isValidMove = isLegalBishopPromoMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.includes('+') && !selectedPieceKey.includes('R') && !selectedPieceKey.includes('B')) {
+            isValidMove = isLegalPromoMove(selectedPieceKey, piece.x, piece.y, col, row);
         }
+
         if (!isValidMove) {
             console.log(`Invalid move for ${selectedPieceKey} to (${col}, ${row})`);
             return;
@@ -239,6 +253,7 @@ canvas.addEventListener('click', (event) => {
         }
         piece.x = col;
         piece.y = row;
+        forcePromotion(selectedPieceKey, piece.x, piece.y, col, row);
         selectedPieceKey = null;
         updateGame();
         inCheck('player1');
@@ -272,7 +287,7 @@ function isLegalPawnMove(pieceKey, fromX, fromY, toX, toY) {
 
 function isLegalLanceMove(pieceKey, fromX, fromY, toX, toY) {
     if (fromX !== toX) return false;
-    const direction = pieceKey.startsWith('LS') ? 1 : -1;
+    const direction = pieceKey.startsWith('LS') || pieceKey.startsWith('LXS') ? 1 : -1;
     const dy = toY - fromY;
     if (direction * dy <= 0) return false;
     const stepY = direction;
@@ -465,46 +480,54 @@ function isLegalPromoMove(pieceKey, fromX, fromY, toX, toY) {
 function isLegalRookPromoMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = Math.abs(toX - fromX);
     const dy = Math.abs(toY - fromY);
-    
-    if (dx !== 0 && dy !== 0) {
-        return false;
-    }
-    const stepX = dx === 0 ? 0 : (toX - fromX) / dx;
-    const stepY = dy === 0 ? 0 : (toY - fromY) / dy;
-    for (let i = 1; i < Math.max(dx, dy); i++) {
-        const x = fromX + i * stepX;
-        const y = fromY + i * stepY;
-        if (isOccupied(x, y)) {
-            console.log(`Blocked at (${x}, ${y})`);
-            return false;
+    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    if (dx === 0 || dy === 0) {
+        const stepX = dx === 0 ? 0 : (toX - fromX) / dx;
+        const stepY = dy === 0 ? 0 : (toY - fromY) / dy;
+        for (let i = 1; i < Math.max(dx, dy); i++) {
+            if (isOccupied(fromX + i * stepX, fromY + i * stepY)) {
+                return false;
+            }
         }
+        return !isOwnPieceAt(toX, toY, owner);
     }
-    return true;
+    if (dx === 1 && dy === 1) {
+        return !isOwnPieceAt(toX, toY, owner);
+    }
+    return false;
 }
 function isLegalBishopPromoMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = Math.abs(toX - fromX);
     const dy = Math.abs(toY - fromY);
-
-    if (dx === dy) {
+    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    if (dx === dy && dx !== 0) {
         const stepX = (toX - fromX) / dx;
         const stepY = (toY - fromY) / dy;
         for (let i = 1; i < dx; i++) {
-            const x = fromX + i * stepX;
-            const y = fromY + i * stepY;
-            if (isOccupied(x, y)) {
-                console.log(`Blocked at (${x}, ${y})`);
+            if (isOccupied(fromX + i * stepX, fromY + i * stepY)) {
                 return false;
             }
         }
-        return true;
+        return !isOwnPieceAt(toX, toY, owner);
     }
-
     if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-        return true;
+        return !isOwnPieceAt(toX, toY, owner);
     }
 
     return false;
 }
+
+function isOwnPieceAt(x, y, owner) {
+    for (const key in pieces) {
+        const p = pieces[key];
+        if (p.x === x && p.y === y) {
+            const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+            if (targetOwner === owner) return true;
+        }
+    }
+    return false;
+}
+
 
 function isOccupied(x, y) {
     for (const key in pieces) {
@@ -569,7 +592,58 @@ function checkmate(player) {
     gameOver = true;
     return true;
 }
+function promotePiece(key) {
+    const piece = pieces[key];
+    if (!piece) {
+        console.log(`No piece at key ${key}`);
+        return;
+    }
+    let newKey;
+    if (!key.includes('+')) {
+        if (key.startsWith('P')) {
+        const type = key[0];  
+        const rest = key.slice(1); 
+        newKey = `${type}+${rest}`;}
+        else {
+            newKey = key + '+';
+        }
+    } else {
+        console.log(`${key} is already promoted`);
+        return;
+    }
+    if (!pieceImages[newKey[0] + '+']) {
+        console.log(`No promoted image for ${newKey}`);
+        return;
+    }
 
+    piece.image = pieceImages[newKey[0] + '+'].src;
+
+    delete pieces[key];
+    pieces[newKey] = piece;
+
+    console.log(`${key} promoted to ${newKey}`);
+    return newKey;
+}
+function forcePromotion(pieceKey, fromX, fromY, toX, toY) {
+    if (pieceKey.startsWith('P') || pieceKey.startsWith('PS')) {
+        if (toY === 0 || toY === 8) {
+            promotePiece(pieceKey);
+            return true;
+        }
+    }
+    if (pieceKey.startsWith('L') || pieceKey.startsWith('LS')) {
+        if (toY === 0 || toY === 8) {
+            promotePiece(pieceKey);
+            return true;
+        }
+    }
+    if (pieceKey.startsWith('N') || pieceKey.startsWith('NS')) {
+        if (toY === 0 || toY === 8) {
+            promotePiece(pieceKey);
+            return true;
+        }
+    }
+}
 function getOwner(key) {
     return key.endsWith('S') ? 'player2' : 'player1';
 }
@@ -578,16 +652,22 @@ function ownedBy(key, player) {
     return (player === 'player1' && !key.endsWith('S')) || (player === 'player2' && key.endsWith('S'));
 }
 function isLegalMove(pieceKey, fromX, fromY, toX, toY) {
+    if (pieceKey.includes('+')) {
+        if (pieceKey.startsWith('R')) return isLegalRookPromoMove(pieceKey, fromX, fromY, toX, toY);
+        if (pieceKey.startsWith('B')) return isLegalBishopPromoMove(pieceKey, fromX, fromY, toX, toY);
+        return isLegalPromoMove(pieceKey, fromX, fromY, toX, toY); 
+    }
     if (pieceKey.startsWith('P')) return isLegalPawnMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('L')) return isLegalLanceMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('N')) return isLegalKnightMove(pieceKey, fromX, fromY, toX, toY);
-    if (pieceKey.startsWith('S')) return isLegalSilverMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('Q') || pieceKey.startsWith('S')) return isLegalSilverMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('G')) return isLegalGoldMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('K')) return isLegalKingMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('B')) return isLegalBishopMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('R')) return isLegalRookMove(pieceKey, fromX, fromY, toX, toY);
     return false;
 }
+
 
 loadAllImages(() => {
     spawnInitialPieces();
