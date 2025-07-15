@@ -433,6 +433,78 @@ function isLegalRookMove(pieceKey, fromX, fromY, toX, toY){
     }
     return true;
 }
+function isLegalPromoMove(pieceKey, fromX, fromY, toX, toY) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    const direction = pieceKey.endsWith('S') ? 1 : -1;
+    if (dx === 0 && dy === 0) return false;
+    if (dy === -direction && Math.abs(dx) === 1) return false;
+    if (
+        (dx === 0 && Math.abs(dy) === 1) ||
+        (Math.abs(dx) === 1 && dy === 0) ||
+        (Math.abs(dx) === 1 && dy === direction)
+    ) {
+        for (const key in pieces) {
+            const p = pieces[key];
+            if (p.x === toX && p.y === toY) {
+                const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+                if (targetOwner === owner) {
+                    console.log(`Can't move — your own piece at (${toX}, ${toY})`);
+                    return false;
+                } else {
+                    console.log(`Capturing enemy at (${toX}, ${toY})`);
+                    return true;
+                }
+            }
+        }
+        return true;
+    }
+    return false;
+}
+function isLegalRookPromoMove(pieceKey, fromX, fromY, toX, toY) {
+    const dx = Math.abs(toX - fromX);
+    const dy = Math.abs(toY - fromY);
+    
+    if (dx !== 0 && dy !== 0) {
+        return false;
+    }
+    const stepX = dx === 0 ? 0 : (toX - fromX) / dx;
+    const stepY = dy === 0 ? 0 : (toY - fromY) / dy;
+    for (let i = 1; i < Math.max(dx, dy); i++) {
+        const x = fromX + i * stepX;
+        const y = fromY + i * stepY;
+        if (isOccupied(x, y)) {
+            console.log(`Blocked at (${x}, ${y})`);
+            return false;
+        }
+    }
+    return true;
+}
+function isLegalBishopPromoMove(pieceKey, fromX, fromY, toX, toY) {
+    const dx = Math.abs(toX - fromX);
+    const dy = Math.abs(toY - fromY);
+
+    if (dx === dy) {
+        const stepX = (toX - fromX) / dx;
+        const stepY = (toY - fromY) / dy;
+        for (let i = 1; i < dx; i++) {
+            const x = fromX + i * stepX;
+            const y = fromY + i * stepY;
+            if (isOccupied(x, y)) {
+                console.log(`Blocked at (${x}, ${y})`);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+        return true;
+    }
+
+    return false;
+}
 
 function isOccupied(x, y) {
     for (const key in pieces) {
