@@ -196,12 +196,17 @@ canvas.addEventListener('click', (event) => {
             return;
         }
         let isValidMove = false;
-        if (selectedPieceKey.startsWith('P') || selectedPieceKey.startsWith('PS')) {
+
+        if (selectedPieceKey.startsWith('R+') || selectedPieceKey.startsWith('RS+')) {
+            isValidMove = isLegalRookPromoMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.startsWith('B+') || selectedPieceKey.startsWith('BS+')) {
+            isValidMove = isLegalBishopPromoMove(selectedPieceKey, piece.x, piece.y, col, row);
+        } else if (selectedPieceKey.includes('+') && !selectedPieceKey.includes('R') && !selectedPieceKey.includes('B')) {
+            isValidMove = isLegalPromoMove(selectedPieceKey, piece.x, piece.y, col, row);}
+        else if (selectedPieceKey.startsWith('P') || selectedPieceKey.startsWith('PS')) {
             isValidMove = isLegalPawnMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('L') || selectedPieceKey.startsWith('LS') ) {
-            if(!selectedPieceKey.endsWith('+')){
             isValidMove = isLegalLanceMove(selectedPieceKey, piece.x, piece.y, col, row);
-        }
         } else if (selectedPieceKey.startsWith('N') || selectedPieceKey.startsWith('NS')) {
             isValidMove = isLegalKnightMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('Q') || selectedPieceKey.startsWith('QS')) {
@@ -214,12 +219,6 @@ canvas.addEventListener('click', (event) => {
             isValidMove = isLegalBishopMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('R') || selectedPieceKey.startsWith('RS')) {
             isValidMove = isLegalRookMove(selectedPieceKey, piece.x, piece.y, col, row);
-        } else if (selectedPieceKey.startsWith('R+') || selectedPieceKey.startsWith('RS+')) {
-            isValidMove = isLegalRookPromoMove(selectedPieceKey, piece.x, piece.y, col, row);
-        } else if (selectedPieceKey.startsWith('B+') || selectedPieceKey.startsWith('BS+')) {
-            isValidMove = isLegalBishopPromoMove(selectedPieceKey, piece.x, piece.y, col, row);
-        } else if (selectedPieceKey.includes('+') && !selectedPieceKey.includes('R') && !selectedPieceKey.includes('B')) {
-            isValidMove = isLegalPromoMove(selectedPieceKey, piece.x, piece.y, col, row);
         }
 
         if (!isValidMove) {
