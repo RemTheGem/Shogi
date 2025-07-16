@@ -8,6 +8,8 @@ const captured = {
     player1: [],
     player2: []
 };
+let turn = 0;
+let playerTurn = 'player1';
 let gameOver = false;
 const pieces = {
     'P': { image: 'pawn.png' },
@@ -225,6 +227,11 @@ canvas.addEventListener('click', (event) => {
             console.log(`Invalid move for ${selectedPieceKey} to (${col}, ${row})`);
             return;
         }
+
+        if (playerTurn !== getOwner(selectedPieceKey)) {
+            console.log(`It's not your turn! Current turn: ${playerTurn}`);
+            return;
+        }
         if (isOccupied(col, row)) {
             for (const key in pieces) {
                 const p = pieces[key];
@@ -252,6 +259,8 @@ canvas.addEventListener('click', (event) => {
         }
         piece.x = col;
         piece.y = row;
+        turn++;
+        playerTurn = makeTurn();
         forcePromotion(selectedPieceKey, piece.x, piece.y, col, row);
         selectedPieceKey = null;
         updateGame();
@@ -666,7 +675,16 @@ function isLegalMove(pieceKey, fromX, fromY, toX, toY) {
     if (pieceKey.startsWith('R')) return isLegalRookMove(pieceKey, fromX, fromY, toX, toY);
     return false;
 }
-
+function makeTurn(){
+    if (turn % 2 === 0) {
+        console.log("Player 1's turn");
+        return 'player1';
+    }
+    else {
+        console.log("Player 2's turn");
+        return 'player2';
+    }
+}
 
 loadAllImages(() => {
     spawnInitialPieces();
