@@ -659,34 +659,8 @@ function isOccupied(x, y) {
     }
     return false;
 }
-/*
-function inCheck(player) {
-    // kingkey nice
-    const kingKey = player === 'player1' ? 'K' : 'KS';
-    const king = pieces[kingKey];
-    if (!king) return false; 
 
-    for (const key in pieces) {
-        if (key === kingKey) continue; 
-        const piece = pieces[key];
-        if (piece.x === king.x && piece.y === king.y) continue; 
-        if (getOwner(key) === player) {
-            continue;
-        }
-        let isLegal = false;
-        isLegal = isLegalMove(key, piece.x, piece.y, king.x, king.y);
-
-        if (isLegal) {
-            console.log(`${player} King in check by ${key}`);
-            return true;
-        }
-
-    }
-    return false;
-}
-    */
 function inCheck(player, boardPieces = pieces) {
-    // Find king position
     let kingPos = null;
     for (const key in boardPieces) {
         if (getOwner(key) === player && (key.startsWith('K') || key.startsWith('KS'))) {
@@ -699,16 +673,15 @@ function inCheck(player, boardPieces = pieces) {
         return false;
     }
 
-    // Check if any enemy piece attacks king's pos
     for (const key in boardPieces) {
         if (getOwner(key) !== player) {
             const p = boardPieces[key];
             if (isLegalMove(key, p.x, p.y, kingPos.x, kingPos.y, boardPieces)) {
-                return true; // King is under attack
+                return true; 
             }
         }
     }
-    return false; // King safe
+    return false; 
 }
 function wouldBeInCheckAfterMove(pieceKey, toX, toY) {
     const tempPieces = {};
@@ -917,26 +890,6 @@ function noNifu(player, col) {
     }
     return true;
 }
-/*
-
-
-function noNifu(player, col) {
-    for (const key in pieces) {
-        if (getOwner(key) === player && !key.includes('+')) {
-            // make sure it’s a pawn
-            const baseKey = getBaseKey(key);
-            if (baseKey === 'P' || baseKey === 'PS') {
-                if (pieces[key].x === col) {
-                    console.log(`Nifu violated by ${key} at column ${col}`);
-                    return false;
-                }
-            }
-        }
-    }
-    console.log(`No nifu violation for ${player} at column ${col}`);
-    return true;
-}
-*/
 
 function updateDropOptions() {
     dropSelect.innerHTML = '';
