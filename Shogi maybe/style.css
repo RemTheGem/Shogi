@@ -4,9 +4,66 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background: #000000ca;
+    background: #121212;
+    color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+#Promo {
+    margin-right: 50px;
+    top: 20px;
+    text-align: center;
+}
+
+#Promo h1 {
+    font-size: 2em;
+    color: #ffd700;
+}
+
+#Promo p {
+    font-size: 1em;
+    color: #aaa;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 canvas {
-    border: 1px solid #000;
+    border: 2px solid #444;
+    box-shadow: 0 0 10px #000;
+}
+
+#hand {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-left: 50px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+select {
+    width:150px;
+    padding: 8px 12px;
+    font-size: 1em;
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
 }

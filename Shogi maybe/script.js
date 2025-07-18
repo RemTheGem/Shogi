@@ -1,6 +1,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const promoteButton = document.getElementById('promoteButton');
+const dropSelect = document.getElementById('dropSelect');
+const dropButton = document.getElementById('dropButton');
 const boardSize = Math.min(canvas.width, canvas.height) * 0.9;
 const cellSize = boardSize / 9;
 const offsetX = (canvas.width - boardSize) / 2;
@@ -20,6 +22,10 @@ const pieces = {
     'N': { image: 'knight.png' },
     'Q': { image: 'silver.png'},
     'G': { image: 'gold.png' },
+    'LX': { image: 'lance.png' },
+    'NX': { image: 'knight.png' },
+    'QX': { image: 'silver.png' },
+    'GX': { image: 'gold.png' },
     'B': { image: 'bishop.png' },
     'R': { image: 'rook.png' },
     'K': { image: 'king.png' },
@@ -28,6 +34,10 @@ const pieces = {
     'NS': { image: 'knight2.png' },
     'QS': { image: 'silver2.png' },
     'GS': { image: 'gold2.png' },
+    'LXS': { image: 'lance2.png' },
+    'NXS': { image: 'knight2.png' },
+    'QXS': { image: 'silver2.png' },
+    'GXS': { image: 'gold2.png' },
     'BS': { image: 'bishop2.png' },
     'RS': { image: 'rook2.png' },
     'KS': { image: 'king2.png' },
@@ -168,6 +178,7 @@ function updateGame() {
     drawPieces();
     checkmate('player1');
     checkmate('player2');
+    updateDropOptions();
 }
 
 let selectedPieceKey = null;
@@ -188,13 +199,26 @@ promoteButton.addEventListener('click', () => {
         const newKey = promotePiece(selectedPieceKey);
         pieceReadyForPromotion = newKey;
         canPromote = false;
+        selectedPieceKey = null;
         updateGame();
     } else {
         console.log(`Piece ${selectedPieceKey} cannot be promoted.`);
         console.log("Piece cannot be promoted here.");
     }
 });
+let isDropping = false;
+let pieceToDrop = null;
 
+dropButton.addEventListener('click', () => {
+    const selectedPiece = dropSelect.value;
+    if (!selectedPiece) {
+        console.log("No piece selected for dropping.");
+        return;
+    }
+    isDropping = true;
+    pieceToDrop = selectedPiece;
+    console.log(`Ready to drop ${selectedPiece}. Click on the board.`);
+});
 canvas.addEventListener('click', (event) => {
     if (gameOver) {
         console.log("Game over! No more moves allowed.");
@@ -206,13 +230,71 @@ canvas.addEventListener('click', (event) => {
     const col = Math.floor((x - offsetX) / cellSize);
     const row = Math.floor((y - offsetY) / cellSize);
     if (col < 0 || col >= 9 || row < 0 || row >= 9) return;
+    if (isDropping) {
+        let tempPieceToDrop = pieceToDrop;
+        let owner = getOwner(pieceToDrop);
+        if (playerTurn === 'player2' && !tempPieceToDrop.includes('S')) {
+            console.log('Before:', tempPieceToDrop);
+            tempPieceToDrop += 'S';
+            console.log('After:', tempPieceToDrop);
+
+        } else if (playerTurn === 'player1' && tempPieceToDrop.includes('S')) {
+            console.log('Before:', tempPieceToDrop);
+            tempPieceToDrop = tempPieceToDrop.replace(/S/g, '');
+            console.log('After:', tempPieceToDrop);
+        }
+        if (noNifu(owner, col) === false && tempPieceToDrop.startsWith('P')) {
+            console.log(`Cannot drop pawn at column ${col} due to nifu rule`);
+            return false;
+        }
+        if(!legalDrop(pieceToDrop, col, row)) {
+            console.log(`Illegal drop for ${pieceToDrop} at (${col}, ${row})`);
+            return;
+        }
+        else {
+            const baseKey = getBaseKey(pieceToDrop); 
+            let suffix = pieceToDrop.slice(baseKey.length); 
+            let newKey = baseKey;
+
+            if (playerTurn === 'player2' && !newKey.includes('S')) {
+                console.log('Before:', newKey);
+                newKey += 'S';
+                console.log('After:', newKey);
+
+            } else if (playerTurn === 'player1' && newKey.includes('S')) {
+                console.log('Before:', newKey);
+                newKey = newKey.replace(/S/g, '');
+                console.log('After:', newKey);
+            }
+
+            const fullKey = newKey;
+
+            if (!pieceImages[newKey]) {
+                console.error(`No image for ${newKey}`);
+                return;
+            }
+
+            const uniqueId = fullKey + '_' + Date.now();
+            pieces[uniqueId] = { x: col, y: row, image: pieceImages[newKey].src };
+
+            captured[playerTurn] = captured[playerTurn].filter(p => p !== pieceToDrop);
+
+            console.log(`Dropped ${fullKey} at (${col}, ${row})`);
+            isDropping = false;
+            pieceToDrop = null;
+            turn++;
+            playerTurn = makeTurn();
+            updateGame();
+            return;
+        }
+    }
     if (selectedPieceKey === null) {
         for (const key in pieces) {
             const p = pieces[key];
             if (p.x === col && p.y === row) {
                 selectedPieceKey = key;
                 highlightCell(row, col, boardSize, offsetX, offsetY);
-                console.log(`Selected piece: ${key} at (${col}, ${row})`);
+                console.log(`Selected piece: ${key} at (${col}, ${row}) owned by ${getOwner(key)}`);
                 break;
             }}
     } else {
@@ -242,7 +324,12 @@ canvas.addEventListener('click', (event) => {
         } else if (selectedPieceKey.startsWith('G') || selectedPieceKey.startsWith('GS')) {
             isValidMove = isLegalGoldMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('K') || selectedPieceKey.startsWith('KS')) {
+            if (wouldBeInCheckAfterMove(selectedPieceKey, col, row)) {
+                console.log("Can't move into check, King would be in danger!");
+                isValidMove = false;
+            }else{
             isValidMove = isLegalKingMove(selectedPieceKey, piece.x, piece.y, col, row);
+            }
         } else if (selectedPieceKey.startsWith('B') || selectedPieceKey.startsWith('BS')) {
             isValidMove = isLegalBishopMove(selectedPieceKey, piece.x, piece.y, col, row);
         } else if (selectedPieceKey.startsWith('R') || selectedPieceKey.startsWith('RS')) {
@@ -433,6 +520,7 @@ function isLegalKingMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = Math.abs(toX - fromX);
     const dy = Math.abs(toY - fromY);
     const owner = pieceKey.includes('S') ? 'player2' : 'player1';
+    
     if ((dx === 1 && dy === 1) || (dx === 0 && dy === 1) || (dx === 1 && dy === 0) || (dx === 0 && dy === -1)) {
         for (const key in pieces) {
             const p = pieces[key];
@@ -571,6 +659,7 @@ function isOccupied(x, y) {
     }
     return false;
 }
+/*
 function inCheck(player) {
     // kingkey nice
     const kingKey = player === 'player1' ? 'K' : 'KS';
@@ -595,6 +684,42 @@ function inCheck(player) {
     }
     return false;
 }
+    */
+function inCheck(player, boardPieces = pieces) {
+    // Find king position
+    let kingPos = null;
+    for (const key in boardPieces) {
+        if (getOwner(key) === player && (key.startsWith('K') || key.startsWith('KS'))) {
+            kingPos = { x: boardPieces[key].x, y: boardPieces[key].y };
+            break;
+        }
+    }
+    if (!kingPos) {
+        console.error(`King for ${player} not found!`);
+        return false;
+    }
+
+    // Check if any enemy piece attacks king's pos
+    for (const key in boardPieces) {
+        if (getOwner(key) !== player) {
+            const p = boardPieces[key];
+            if (isLegalMove(key, p.x, p.y, kingPos.x, kingPos.y, boardPieces)) {
+                return true; // King is under attack
+            }
+        }
+    }
+    return false; // King safe
+}
+function wouldBeInCheckAfterMove(pieceKey, toX, toY) {
+    const tempPieces = {};
+    for (const key in pieces) {
+        tempPieces[key] = { ...pieces[key] };
+    }
+    tempPieces[pieceKey].x = toX;
+    tempPieces[pieceKey].y = toY;
+    return inCheck(getOwner(pieceKey), tempPieces);
+}
+
 function checkmate(player) {
     if (!inCheck(player)) return false;
 
@@ -708,7 +833,7 @@ function isLegalMove(pieceKey, fromX, fromY, toX, toY) {
     if (pieceKey.startsWith('P')) return isLegalPawnMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('L')) return isLegalLanceMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('N')) return isLegalKnightMove(pieceKey, fromX, fromY, toX, toY);
-    if (pieceKey.startsWith('Q') || pieceKey.startsWith('S')) return isLegalSilverMove(pieceKey, fromX, fromY, toX, toY);
+    if (pieceKey.startsWith('Q')) return isLegalSilverMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('G')) return isLegalGoldMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('K')) return isLegalKingMove(pieceKey, fromX, fromY, toX, toY);
     if (pieceKey.startsWith('B')) return isLegalBishopMove(pieceKey, fromX, fromY, toX, toY);
@@ -727,7 +852,8 @@ function makeTurn(){
 }
 function canDrop(pieceKey, x, y){
     if (captured[playerTurn].includes(pieceKey)) {
-        return true;}
+        return true;
+    }
         return false;
 }
 function legalDrop(pieceKey, x, y) {
@@ -751,10 +877,7 @@ function legalDrop(pieceKey, x, y) {
             return false;
         }
     }
-    if (noNifu(owner, x) === false && pieceKey.startsWith('P')){
-        console.log(`Cannot drop pawn at column ${x} due to nifu rule`);
-        return false;
-    }
+    
     if (pieceKey.includes('L')) {
         if (owner === 'player1' && y === 8) {
             console.log(`Cannot drop lance at row ${y}`);
@@ -778,15 +901,78 @@ function legalDrop(pieceKey, x, y) {
     return true;}
     return false;
 }
+
 function noNifu(player, col) {
     for (const key in pieces) {
-        if (getOwner(key) === player && !key.includes('+') && key.startsWith('P')) {
-            if (pieces[key].x === col) {
-                return false; 
+        if (!key.includes('P') || key.includes('+')) continue;
+
+        if (player === 'player1' && pieces[key].x === col && key.includes('S')) {
+            console.log(`Nifu violated by ${key} at column ${col}`);
+            return false;
+        }
+        if (player === 'player2' && pieces[key].x === col && !key.includes('S')) {
+            console.log(`Nifu violated by ${key} at column ${col}`);
+            return false;
+        }
+    }
+    return true;
+}
+/*
+
+
+function noNifu(player, col) {
+    for (const key in pieces) {
+        if (getOwner(key) === player && !key.includes('+')) {
+            // make sure it’s a pawn
+            const baseKey = getBaseKey(key);
+            if (baseKey === 'P' || baseKey === 'PS') {
+                if (pieces[key].x === col) {
+                    console.log(`Nifu violated by ${key} at column ${col}`);
+                    return false;
+                }
             }
         }
     }
-    return true; 
+    console.log(`No nifu violation for ${player} at column ${col}`);
+    return true;
+}
+*/
+
+function updateDropOptions() {
+    dropSelect.innerHTML = '';
+    const capturedPieces = captured[playerTurn];
+    capturedPieces.forEach(pieceKey => {
+        const option = document.createElement('option');
+        option.value = pieceKey;
+        option.textContent = getName(pieceKey);  
+        dropSelect.appendChild(option);
+    });
+    if (capturedPieces.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = 'No pieces to drop';
+        option.disabled = true;
+        dropSelect.appendChild(option);
+    }
+}
+function getName(pieceKey){
+    if (pieceKey.includes('P')) return 'Pawn';
+    if (pieceKey.includes('L')) return 'Lance';
+    if (pieceKey.includes('N')) return 'Knight';
+    if (pieceKey.includes('Q')) return 'Silver General';
+    if (pieceKey.includes('G')) return 'Gold General';
+    if (pieceKey.includes('B')) return 'Bishop';
+    if (pieceKey.includes('R')) return 'Rook';
+}
+function generateUniqueKey(base, x, y) {
+    let key = base;
+    let i = 0;
+    while (pieces.hasOwnProperty(key)) {
+        key = base + '_' + i++;
+    }
+    return key;
+}
+function getBaseKey(key) {
+    return key.replace(/[0-9_]/g, '').replace('S', '');
 }
 
 loadAllImages(() => {

@@ -7,21 +7,20 @@
 </head>
 
 <body>
-    <div id = "Promo">
-        <h1>Shogi Game</h1>
-        <p>Click on a piece to select it, then click on the destination square to move it.</p>
+    <div id="Promo">
+        <h1>Shogi</h1>
         <p>Use the buttons below to promote or drop pieces.</p>
         <button id="promoteButton">Promote Piece</button>
-        <button id="dropButton">Drop Piece</button>
     </div>
-    <canvas id="gameCanvas" width="900" height="800"></canvas>
-    <div id="hand">
-        <h2>Player 1's Hand</h2>
-        <div id="player1Hand"></div>
-        <h2>Player 2's Hand</h2>
-        <div id="player2Hand"></div>
-    <script src="script.js"></script>
 
+        <canvas id="gameCanvas" width="900" height="800"></canvas>
+        <div id="hand">
+            <button id="dropButton">Drop Piece</button>
+            <div id="drop">
+                <select id="dropSelect"></select>
+            </div>
+    <script src="script.js"></script>
 </body>
+
 
 </html>
