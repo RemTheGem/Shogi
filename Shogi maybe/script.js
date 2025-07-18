@@ -1,5 +1,6 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const promoteButton = document.getElementById('promoteButton');
 const boardSize = Math.min(canvas.width, canvas.height) * 0.9;
 const cellSize = boardSize / 9;
 const offsetX = (canvas.width - boardSize) / 2;
@@ -11,6 +12,8 @@ const captured = {
 let turn = 0;
 let playerTurn = 'player1';
 let gameOver = false;
+let canPromote = false;
+let pieceReadyForPromotion = null;
 const pieces = {
     'P': { image: 'pawn.png' },
     'L': { image: 'lance.png'},
@@ -168,6 +171,29 @@ function updateGame() {
 }
 
 let selectedPieceKey = null;
+promoteButton.addEventListener('click', () => {
+    if(!canPromote) {
+        console.log("Promotion not allowed at this time.");
+        return;
+    }
+    if (selectedPieceKey === null) {
+        console.log("No piece selected for promotion.");
+        return;
+    }
+    if (selectedPieceKey.includes('+')) {
+        console.log(`Can't promote ${selectedPieceKey} as it's already promoted.`);
+        return;
+    }
+    if (checkPromotion(selectedPieceKey) && canPromote) {
+        const newKey = promotePiece(selectedPieceKey);
+        pieceReadyForPromotion = newKey;
+        canPromote = false;
+        updateGame();
+    } else {
+        console.log(`Piece ${selectedPieceKey} cannot be promoted.`);
+        console.log("Piece cannot be promoted here.");
+    }
+});
 
 canvas.addEventListener('click', (event) => {
     if (gameOver) {
@@ -259,6 +285,7 @@ canvas.addEventListener('click', (event) => {
         }
         piece.x = col;
         piece.y = row;
+        canPromote = checkPromotion(selectedPieceKey);
         turn++;
         playerTurn = makeTurn();
         forcePromotion(selectedPieceKey, piece.x, piece.y, col, row);
@@ -273,12 +300,12 @@ function isLegalPawnMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = toX - fromX;
     const dy = toY - fromY;
     const direction = pieceKey.startsWith('PS') ? 1 : -1;
-    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    const owner = pieceKey.includes('S') ? 'player2' : 'player1';
     if (dx === 0 && dy === direction) {
         for (const key in pieces) {
             const p = pieces[key];
             if (p.x === toX && p.y === toY) {
-                const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+                const targetOwner = key.includes('S') ? 'player2' : 'player1';
                 if (targetOwner === owner) {
                     console.log(`Can't move — your own piece at (${toX}, ${toY})`); 
                     return false;
@@ -308,8 +335,8 @@ function isLegalLanceMove(pieceKey, fromX, fromY, toX, toY) {
     for (const key in pieces) {
         const p = pieces[key];
         if (p.x === toX && p.y === toY) {
-            const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
-            const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+            const owner = pieceKey.includes('S') ? 'player2' : 'player1';
+            const targetOwner = key.includes('S') ? 'player2' : 'player1';
             if (owner === targetOwner) {
                 console.log(`Can't capture own piece at (${toX}, ${toY})`);
                 return false;
@@ -326,7 +353,7 @@ function isLegalKnightMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = toX - fromX;
     const dy = toY - fromY;
 
-    const direction = pieceKey.endsWith('S') ? 1 : -1;
+    const direction = pieceKey.includes('S') ? 1 : -1;
 
     if (!((Math.abs(dx) === 1) && (dy === 2 * direction))) {
         return false;
@@ -335,8 +362,8 @@ function isLegalKnightMove(pieceKey, fromX, fromY, toX, toY) {
     for (const key in pieces) {
         const p = pieces[key];
         if (p.x === toX && p.y === toY) {
-            const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
-            const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+            const owner = pieceKey.includes('S') ? 'player2' : 'player1';
+            const targetOwner = key.includes('S') ? 'player2' : 'player1';
             if (owner === targetOwner) {
                 console.log(`Can't capture own piece at (${toX}, ${toY})`);
                 return false;
@@ -352,13 +379,13 @@ function isLegalKnightMove(pieceKey, fromX, fromY, toX, toY) {
 function isLegalSilverMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = Math.abs(toX - fromX);
     const dy = toY - fromY;
-    const direction = pieceKey.endsWith('S') ? 1 : -1;
-    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    const direction = pieceKey.includes('S') ? 1 : -1;
+    const owner = pieceKey.includes('S') ? 'player2' : 'player1';
     if ((dx === 1 && dy === 1 * direction) || (dx === 0 && dy === 1* direction) || (dx === 1 && dy === 1 * -direction)) {
         for (const key in pieces) {
             const p = pieces[key];
             if (p.x === toX && p.y === toY) {
-                const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+                const targetOwner = key.includes('S') ? 'player2' : 'player1';
                 if (targetOwner === owner) {
                     console.log(`Can't move — your own piece at (${toX}, ${toY})`);
                     return false;
@@ -375,8 +402,8 @@ function isLegalSilverMove(pieceKey, fromX, fromY, toX, toY) {
 function isLegalGoldMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = toX - fromX;
     const dy = toY - fromY;
-    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
-    const direction = pieceKey.endsWith('S') ? 1 : -1;
+    const owner = pieceKey.includes('S') ? 'player2' : 'player1';
+    const direction = pieceKey.includes('S') ? 1 : -1;
     if (dx === 0 && dy === 0) return false;
     if (dy === -direction && Math.abs(dx) === 1) return false;
     if (
@@ -387,7 +414,7 @@ function isLegalGoldMove(pieceKey, fromX, fromY, toX, toY) {
         for (const key in pieces) {
             const p = pieces[key];
             if (p.x === toX && p.y === toY) {
-                const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+                const targetOwner = key.includes('S') ? 'player2' : 'player1';
                 if (targetOwner === owner) {
                     console.log(`Can't move — your own piece at (${toX}, ${toY})`);
                     return false;
@@ -405,12 +432,12 @@ function isLegalGoldMove(pieceKey, fromX, fromY, toX, toY) {
 function isLegalKingMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = Math.abs(toX - fromX);
     const dy = Math.abs(toY - fromY);
-    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    const owner = pieceKey.includes('S') ? 'player2' : 'player1';
     if ((dx === 1 && dy === 1) || (dx === 0 && dy === 1) || (dx === 1 && dy === 0) || (dx === 0 && dy === -1)) {
         for (const key in pieces) {
             const p = pieces[key];
             if (p.x === toX && p.y === toY) {
-                const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+                const targetOwner = key.includes('S') ? 'player2' : 'player1';
                 if (targetOwner === owner) {
                     console.log(`Can't move — your own piece at (${toX}, ${toY})`);
                     return false;
@@ -459,8 +486,8 @@ function isLegalRookMove(pieceKey, fromX, fromY, toX, toY){
 function isLegalPromoMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = toX - fromX;
     const dy = toY - fromY;
-    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
-    const direction = pieceKey.endsWith('S') ? 1 : -1;
+    const owner = pieceKey.includes('S') ? 'player2' : 'player1';
+    const direction = pieceKey.includes('S') ? 1 : -1;
     if (dx === 0 && dy === 0) return false;
     if (dy === -direction && Math.abs(dx) === 1) return false;
     if (
@@ -471,7 +498,7 @@ function isLegalPromoMove(pieceKey, fromX, fromY, toX, toY) {
         for (const key in pieces) {
             const p = pieces[key];
             if (p.x === toX && p.y === toY) {
-                const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+                const targetOwner = key.includes('S') ? 'player2' : 'player1';
                 if (targetOwner === owner) {
                     console.log(`Can't move — your own piece at (${toX}, ${toY})`);
                     return false;
@@ -488,7 +515,7 @@ function isLegalPromoMove(pieceKey, fromX, fromY, toX, toY) {
 function isLegalRookPromoMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = Math.abs(toX - fromX);
     const dy = Math.abs(toY - fromY);
-    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    const owner = pieceKey.includes('S') ? 'player2' : 'player1';
     if (dx === 0 || dy === 0) {
         const stepX = dx === 0 ? 0 : (toX - fromX) / dx;
         const stepY = dy === 0 ? 0 : (toY - fromY) / dy;
@@ -507,7 +534,7 @@ function isLegalRookPromoMove(pieceKey, fromX, fromY, toX, toY) {
 function isLegalBishopPromoMove(pieceKey, fromX, fromY, toX, toY) {
     const dx = Math.abs(toX - fromX);
     const dy = Math.abs(toY - fromY);
-    const owner = pieceKey.endsWith('S') ? 'player2' : 'player1';
+    const owner = pieceKey.includes('S') ? 'player2' : 'player1';
     if (dx === dy && dx !== 0) {
         const stepX = (toX - fromX) / dx;
         const stepY = (toY - fromY) / dy;
@@ -529,7 +556,7 @@ function isOwnPieceAt(x, y, owner) {
     for (const key in pieces) {
         const p = pieces[key];
         if (p.x === x && p.y === y) {
-            const targetOwner = key.endsWith('S') ? 'player2' : 'player1';
+            const targetOwner = key.includes('S') ? 'player2' : 'player1';
             if (targetOwner === owner) return true;
         }
     }
@@ -653,11 +680,24 @@ function forcePromotion(pieceKey, fromX, fromY, toX, toY) {
     }
 }
 function getOwner(key) {
-    return key.endsWith('S') ? 'player2' : 'player1';
+    return key.includes('S') ? 'player2' : 'player1';
 }
+function checkPromotion(pieceKey) {
+    const piece = pieces[pieceKey];
+    if (!piece) return false;
+
+    const row = piece.y; 
+
+    if (!pieceKey.includes('S')) {
+        return row === 0 || row === 1 || row === 2;
+    } else {
+        return row === 6 || row === 7 || row === 8;
+    }
+}
+
 // another one cuz why not
 function ownedBy(key, player) {
-    return (player === 'player1' && !key.endsWith('S')) || (player === 'player2' && key.endsWith('S'));
+    return (player === 'player1' && !key.includes('S')) || (player === 'player2' && key.includes('S'));
 }
 function isLegalMove(pieceKey, fromX, fromY, toX, toY) {
     if (pieceKey.includes('+')) {
@@ -684,6 +724,69 @@ function makeTurn(){
         console.log("Player 2's turn");
         return 'player2';
     }
+}
+function canDrop(pieceKey, x, y){
+    if (captured[playerTurn].includes(pieceKey)) {
+        return true;}
+        return false;
+}
+function legalDrop(pieceKey, x, y) {
+    const owner = getOwner(pieceKey);
+    if (!pieceKey.includes('+')) {
+    if (!canDrop(pieceKey, x, y)) {
+        console.log(`Cannot drop ${pieceKey} at (${x}, ${y})`);
+        return false;
+    }
+    if (isOccupied(x, y)) {
+        console.log(`Cell (${x}, ${y}) is already occupied`);
+        return false;
+    }
+    if (pieceKey.includes('P')) {
+        if (owner === 'player1' && y === 8) {
+            console.log(`Cannot drop pawn at row ${y}`);
+            return false;
+        }
+        if( owner === 'player2' && y === 0) {
+            console.log(`Cannot drop pawn at row ${y}`);
+            return false;
+        }
+    }
+    if (noNifu(owner, x) === false && pieceKey.startsWith('P')){
+        console.log(`Cannot drop pawn at column ${x} due to nifu rule`);
+        return false;
+    }
+    if (pieceKey.includes('L')) {
+        if (owner === 'player1' && y === 8) {
+            console.log(`Cannot drop lance at row ${y}`);
+            return false;
+        }
+        if (owner === 'player2' && y === 0) {
+            console.log(`Cannot drop lance at row ${y}`);
+            return false;
+        }
+    }
+    if (pieceKey.startsWith('N') || pieceKey.startsWith('NS')) {
+        if (owner === 'player1' && y === 7) {
+            console.log(`Cannot drop knight at row ${y}`);
+            return false;
+        }
+        if (owner === 'player2' && y === 1) {
+            console.log(`Cannot drop knight at row ${y}`);
+            return false;
+        }
+    }
+    return true;}
+    return false;
+}
+function noNifu(player, col) {
+    for (const key in pieces) {
+        if (getOwner(key) === player && !key.includes('+') && key.startsWith('P')) {
+            if (pieces[key].x === col) {
+                return false; 
+            }
+        }
+    }
+    return true; 
 }
 
 loadAllImages(() => {
